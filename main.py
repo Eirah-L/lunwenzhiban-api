@@ -133,6 +133,19 @@ app.add_middleware(
 )
 
 # =========================================================================== #
+#  调试端点（部署后排查环境变量问题，确认后可删）
+# =========================================================================== #
+@app.get("/debug", tags=["系统"])
+async def debug_env():
+    key = os.environ.get("LLM_API_KEY", "")
+    return {
+        "LLM_API_KEY_set": bool(key),
+        "LLM_API_KEY_prefix": key[:10] + "..." if len(key) > 10 else "(empty)",
+        "LLM_API_KEY_length": len(key),
+        "all_env_keys": sorted([k for k in os.environ.keys() if not k.startswith("_")]),
+    }
+
+# =========================================================================== #
 #  健康检查
 # =========================================================================== #
 @app.get("/health", tags=["系统"])
