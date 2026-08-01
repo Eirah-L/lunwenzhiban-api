@@ -103,6 +103,7 @@ async def call_llm(system_prompt: str, user_content: str, temperature: float = 0
         ],
         "max_tokens": MAX_TOKENS,
         "temperature": temperature,
+        "thinking": {"type": "disabled"},
     }
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT, connect=10.0)) as client:
