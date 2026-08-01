@@ -1,3 +1,8 @@
+# 必须在前面：确保 pydantic-core 等含 C/Rust 扩展的包能正常构建
+setuptools>=68.0
+wheel>=0.40.0
+
+# 核心依赖
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 httpx==0.28.1
