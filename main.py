@@ -174,7 +174,7 @@ async def create_outline(req: OutlineRequest):
 论文题目：{req.title}
 请生成结构化论文大纲
 """
-    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4, max_tokens_override=800)
+    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4, max_tokens_override=700)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/literature", tags=["论文辅助功能"])
@@ -186,7 +186,7 @@ async def analyze_literature(req: LiteratureAnalyzeRequest):
 {req.literature_content}
 帮我分析这篇文献核心信息以及对我课题的参考价值
 """
-    result = await call_llm(LITERATURE_PROMPT, user_content, temperature=0.5, max_tokens_override=1500)
+    result = await call_llm(LITERATURE_PROMPT, user_content, temperature=0.5, max_tokens_override=1200)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/reference", tags=["论文辅助功能"])
@@ -197,7 +197,7 @@ async def format_reference(req: RefFormatRequest):
 {req.raw_ref_info}
 整理为标准GB/T 7714参考文献格式
 """
-    result = await call_llm(REF_FORMAT_PROMPT, user_content, temperature=0.1)
+    result = await call_llm(REF_FORMAT_PROMPT, user_content, temperature=0.1, max_tokens_override=1000)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/polish", tags=["论文辅助功能"])
@@ -215,7 +215,7 @@ async def check_format(req: FormatCheckRequest):
 {req.paper_segment}
 检查格式、标点、标题、引用规范错误，并给出修改建议
 """
-    result = await call_llm(FORMAT_CHECK_PROMPT, user_content, temperature=0.2)
+    result = await call_llm(FORMAT_CHECK_PROMPT, user_content, temperature=0.2, max_tokens_override=1200)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 # =========================================================================== #
