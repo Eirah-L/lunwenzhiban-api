@@ -174,7 +174,7 @@ async def create_outline(req: OutlineRequest):
 论文题目：{req.title}
 请生成结构化论文大纲
 """
-    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4, max_tokens_override=1200)
+    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4, max_tokens_override=800)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/literature", tags=["论文辅助功能"])
