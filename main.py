@@ -204,7 +204,7 @@ async def format_reference(req: RefFormatRequest):
 async def polish_text(req: PolishRequest):
     """学术文本润色"""
     user_content = f"需要润色的学术文字：\n{req.raw_text}"
-    result = await call_llm(POLISH_PROMPT, user_content, temperature=0.3)
+    result = await call_llm(POLISH_PROMPT, user_content, temperature=0.3, max_tokens_override=600)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/format_check", tags=["论文辅助功能"])
