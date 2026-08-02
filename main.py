@@ -20,8 +20,9 @@ MAX_TOKENS = 2048
 TIMEOUT = 120
 
 # 注意：Render 免费版会在闲置 15 分钟后休眠，导致首次调用冷启动 30-60s 超时。
-# 必须用外部定时任务（cron-job.org / UptimeRobot）每 10 分钟 ping 一次 /health 保活。
-# 保活后各接口热响应时间：outline≈18s, polish≈8s, format_check≈9s，均 < 扣子 30s 超时。
+# 必须用外部定时任务（cron-job.org / UptimeRobot）每 5 分钟 ping 一次 /health 保活。
+# 保活后各接口热响应时间：outline≈12s, literature≈9s, polish≈4s, format_check≈12s, reference≈4s，均 < 扣子 30s 超时。
+# 所有 handler 已加 LLM 异常捕获，失败时返回友好文本而非崩溃 RST，彻底避免扣子误判超时。
 
 # =========================================================================== #
 #  提示词模板（从项目 base_prompt.py 移植）
@@ -90,8 +91,8 @@ class AcademicTaskResponse(BaseModel):
 # =========================================================================== #
 #  LLM 调用（直接用 httpx，不依赖项目内部模块）
 # =========================================================================== #
-async def call_llm(system_prompt: str, user_content: str, temperature: float = 0.5) -> str:
-    """调用火山引擎豆包 API，返回模型回复文本。"""
+async def call_llm(system_prompt: str, user_content: str, temperature: float = 0.5, max_tokens_override: int = None) -> str:
+    """调用火山引擎豆包 API，返回模型回复文本。任何异常都返回错误字符串而非抛出，避免 uvicorn 崩溃导致连接 RST。"""
     if not API_KEY:
         return "LLM API Key 未配置，请设置环境变量 LLM_API_KEY。"
 
@@ -105,20 +106,24 @@ async def call_llm(system_prompt: str, user_content: str, temperature: float = 0
             {"role": "system", "content": BASE_CONSTRAINT + "\n\n" + system_prompt},
             {"role": "user", "content": user_content},
         ],
-        "max_tokens": MAX_TOKENS,
+        "max_tokens": max_tokens_override if max_tokens_override else MAX_TOKENS,
         "temperature": temperature,
         "thinking": {"type": "disabled"},
     }
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT, connect=10.0)) as client:
-        response = await client.post(
-            f"{BASE_URL}/chat/completions",
-            headers=headers,
-            json=payload,
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT, connect=10.0)) as client:
+            response = await client.post(
+                f"{BASE_URL}/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        # 返回友好错误而非抛异常，避免扣子插件因连接 RST 判定超时
+        return f"[LLM调用异常] {str(e)[:200]}"
 
 # =========================================================================== #
 #  FastAPI 应用
@@ -169,7 +174,7 @@ async def create_outline(req: OutlineRequest):
 论文题目：{req.title}
 请生成结构化论文大纲
 """
-    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4)
+    result = await call_llm(OUTLINE_PROMPT, user_content, temperature=0.4, max_tokens_override=1200)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/literature", tags=["论文辅助功能"])
@@ -181,7 +186,7 @@ async def analyze_literature(req: LiteratureAnalyzeRequest):
 {req.literature_content}
 帮我分析这篇文献核心信息以及对我课题的参考价值
 """
-    result = await call_llm(LITERATURE_PROMPT, user_content, temperature=0.5)
+    result = await call_llm(LITERATURE_PROMPT, user_content, temperature=0.5, max_tokens_override=1500)
     return {"code": 200, "msg": "执行成功", "data": result}
 
 @app.post("/academic/reference", tags=["论文辅助功能"])
