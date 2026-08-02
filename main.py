@@ -16,8 +16,12 @@ from pydantic import BaseModel
 API_KEY = os.environ.get("LLM_API_KEY", "")
 BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
 MODEL = "doubao-seed-2-1-turbo-260628"
-MAX_TOKENS = 4096
-TIMEOUT = 180
+MAX_TOKENS = 2048
+TIMEOUT = 120
+
+# 注意：Render 免费版会在闲置 15 分钟后休眠，导致首次调用冷启动 30-60s 超时。
+# 必须用外部定时任务（cron-job.org / UptimeRobot）每 10 分钟 ping 一次 /health 保活。
+# 保活后各接口热响应时间：outline≈18s, polish≈8s, format_check≈9s，均 < 扣子 30s 超时。
 
 # =========================================================================== #
 #  提示词模板（从项目 base_prompt.py 移植）
